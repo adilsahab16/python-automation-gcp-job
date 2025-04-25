@@ -37,7 +37,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          gcloud builds submit --quiet --tag $IMAGE_NAME --no-stream
+          gcloud builds submit --quiet --tag $IMAGE_NAME
 
       - name: Deploy Cloud Run Job
         run: |
