@@ -1,19 +1,18 @@
-name: Deploy to Cloud Run Jobs
+name: Deploy Cloud Run Job
 
 on:
   push:
     branches:
-      - 'main'
+      - main
 
 env:
-  PROJECT_ID: your-project-id
+  PROJECT_ID: python-notebook-automation
   REGION: us-central1
-  JOB_NAME: my-job-name
-  IMAGE_NAME: us-central1-docker.pkg.dev/your-project-id/your-repo/your-image
+  JOB_NAME: hello-notebook-job
+  IMAGE_NAME: us-central1-docker.pkg.dev/python-notebook-automation/hello-notebook/hello-notebook
 
 jobs:
-  deploy-job:
-    name: Deploy Cloud Run Job
+  deploy:
     runs-on: ubuntu-latest
 
     permissions:
@@ -22,31 +21,28 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
-      - name: Set up Cloud SDK (v2)
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: 'beta'
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
 
-      - name: Build Docker image
+      - name: Build and Push Docker Image to Artifact Registry
         run: |
-          gcloud builds submit --quiet --tag "$IMAGE_NAME" --gcs-log-dir="gs://python-notebook-automation_cloudbuild/logs"
+          gcloud builds submit --tag $IMAGE_NAME
 
       - name: Deploy Cloud Run Job
         run: |
           gcloud run jobs deploy $JOB_NAME \
             --image $IMAGE_NAME \
             --region $REGION \
+            --project $PROJECT_ID \
             --command "python" \
-            --args "scripts/run_all.py"
-
-      - name: Verify job deployment
-        run: |
-          gcloud run jobs describe $JOB_NAME --region $REGION
+            --args "scripts/run_all.py" \
+            --set-env-vars "PORT=8080" \
+            --memory 512Mi \
+            --cpu 1
