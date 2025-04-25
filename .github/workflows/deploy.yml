@@ -37,7 +37,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          gcloud builds submit --quiet --tag $IMAGE_NAME
+          gcloud builds submit --quiet --tag "$IMAGE_NAME" --gcs-log-dir="gs://python-notebook-automation_cloudbuild/logs"
 
       - name: Deploy Cloud Run Job
         run: |
