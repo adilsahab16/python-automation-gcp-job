@@ -1,49 +1,49 @@
-# .github/workflows/deploy.yml
-
-name: Deploy Hello Notebook Job
+name: Deploy to Cloud Run Jobs
 
 on:
   push:
-    branches: [ main ]  # Trigger deployment on push to main
+    branches:
+      - 'main'
+
+env:
+  PROJECT_ID: your-project-id
+  REGION: us-central1
+  JOB_NAME: my-job-name
+  IMAGE_NAME: us-central1-docker.pkg.dev/your-project-id/your-repo/your-image
 
 jobs:
-  build-and-deploy:
+  deploy-job:
+    name: Deploy Cloud Run Job
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v0
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker to use Artifact Registry
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
 
       - name: Build Docker image
-        run: docker build -t us-central1-docker.pkg.dev/python-notebook-automation/hello-notebook/hello-notebook .
-
-      - name: Push Docker image
-        run: docker push us-central1-docker.pkg.dev/python-notebook-automation/hello-notebook/hello-notebook
-
-      - name: Deploy to Cloud Run Job
         run: |
-          IMAGE_NAME=us-central1-docker.pkg.dev/python-notebook-automation/hello-notebook/hello-notebook
-          gcloud run jobs deploy hello-notebook-job \
+          gcloud builds submit --quiet --tag $IMAGE_NAME
+
+      - name: Deploy Cloud Run Job
+        run: |
+          gcloud run jobs deploy $JOB_NAME \
             --image $IMAGE_NAME \
-            --platform managed \
-            --region us-central1 \
-            --allow-unauthenticated \
-            --memory 1Gi \
-            --cpu 1 \
+            --region $REGION \
             --command "python" \
-            --args "scripts/run_all.py" \
-            --set-env-vars PORT=8080 \
-            --max-retries=1 \
-            --execution-environment gen2 \
-            --task-timeout=3600s
+            --args "scripts/run_all.py"
+
+      - name: Verify job deployment
+        run: |
+          gcloud run jobs describe $JOB_NAME --region $REGION
