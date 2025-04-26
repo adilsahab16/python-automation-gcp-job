@@ -33,7 +33,7 @@ jobs:
 
       - name: Build and Push Docker Image to Artifact Registry
         run: |
-          gcloud builds submit --tag $IMAGE_NAME
+          gcloud builds submit --quiet --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
 
       - name: Deploy Cloud Run Job
         run: |
