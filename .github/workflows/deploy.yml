@@ -33,7 +33,7 @@ jobs:
 
       - name: Build and Push Docker Image to Artifact Registry
         run: |
-          gcloud builds submit --quiet --tag "$IMAGE_NAME"
+          gcloud builds submit --quiet --tag "$IMAGE_NAME" || true
 
       - name: Deploy Cloud Run Job
         run: |
