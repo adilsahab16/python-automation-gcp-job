@@ -1,4 +1,4 @@
-name: Deploy Cloud Run Job
+name: Deploy Cloud Run Jobs
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 env:
   PROJECT_ID: python-notebook-automation
   REGION: us-central1
-  JOB_NAME: hello-notebook-job
   IMAGE_NAME: us-central1-docker.pkg.dev/python-notebook-automation/hello-notebook/hello-notebook
 
 jobs:
@@ -35,9 +34,9 @@ jobs:
         run: |
           gcloud builds submit --quiet --tag "$IMAGE_NAME" || true
 
-      - name: Deploy Cloud Run Job
+      - name: Deploy Cloud Run Job - Run All Notebooks
         run: |
-          gcloud run jobs deploy $JOB_NAME \
+          gcloud run jobs deploy hello-notebook-job \
             --image $IMAGE_NAME \
             --region $REGION \
             --project $PROJECT_ID \
@@ -45,3 +44,15 @@ jobs:
             --args "scripts/run_all.py" \
             --memory 512Mi \
             --cpu 1
+
+      - name: Deploy Cloud Run Job - Run Specific Notebook (data_audit.ipynb)
+        run: |
+          gcloud run jobs deploy data-audit-notebook-job \
+            --image $IMAGE_NAME \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --command "python" \
+            --args "scripts/run_all.py" \
+            --memory 512Mi \
+            --cpu 1 \
+            --set-env-vars NOTEBOOK_NAME=data_audit.ipynb
